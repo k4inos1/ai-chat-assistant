@@ -9,6 +9,11 @@ import { ChatHeader } from './chat-header'
 import type { AgentSummary, AgentsResponse } from '@/types/agent'
 import { apiUrl } from '@/lib/api'
 
+const FEEDBACK_RATING: Record<'up' | 'down', number> = {
+  up: 5,
+  down: 1,
+}
+
 export function ChatContainer() {
   const [agents, setAgents] = useState<AgentSummary[]>([])
   const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null)
@@ -77,7 +82,7 @@ export function ChatContainer() {
 
   const handleFeedback = async (messageIndex: number, rating: 'up' | 'down') => {
     if (!conversationId) {
-      const errorMessage = 'La conversación aún no está lista para recibir feedback.'
+      const errorMessage = 'Envía un mensaje y espera a que exista una conversación activa antes de enviar feedback.'
       setFeedbackError(errorMessage)
       throw new Error(errorMessage)
     }
@@ -91,7 +96,7 @@ export function ChatContainer() {
       body: JSON.stringify({
         conversation_id: conversationId,
         message_index: messageIndex,
-        rating: rating === 'up' ? 5 : 1,
+        rating: FEEDBACK_RATING[rating],
       }),
     })
 

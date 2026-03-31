@@ -30,7 +30,7 @@ const proxyRequest = async (request: Request) => {
     const upstreamResponse = await fetch(targetUrl, {
       method: request.method,
       headers,
-      body: body && body.byteLength > 0 ? body : undefined,
+      body,
       redirect: 'manual',
     })
 
@@ -50,43 +50,37 @@ export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
 
 export async function GET(
-  request: Request,
-  context: { params: { path: string[] } }
+  request: Request
 ) {
   return proxyRequest(request)
 }
 
 export async function POST(
-  request: Request,
-  context: { params: { path: string[] } }
+  request: Request
 ) {
   return proxyRequest(request)
 }
 
 export async function PUT(
-  request: Request,
-  context: { params: { path: string[] } }
+  request: Request
 ) {
   return proxyRequest(request)
 }
 
 export async function PATCH(
-  request: Request,
-  context: { params: { path: string[] } }
+  request: Request
 ) {
   return proxyRequest(request)
 }
 
 export async function DELETE(
-  request: Request,
-  context: { params: { path: string[] } }
+  request: Request
 ) {
   return proxyRequest(request)
 }
 
 export async function OPTIONS(
-  request: Request,
-  context: { params: { path: string[] } }
+  request: Request
 ) {
   return proxyRequest(request)
 }
