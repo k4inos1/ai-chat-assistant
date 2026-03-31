@@ -5,6 +5,9 @@ import { cn } from '@/lib/utils'
 
 interface WelcomeScreenProps {
   onSuggestionClick: (suggestion: string) => void
+  agentName?: string
+  agentDescription?: string
+  demoMode?: boolean
 }
 
 const suggestions = [
@@ -46,7 +49,12 @@ const suggestions = [
   }
 ]
 
-export function WelcomeScreen({ onSuggestionClick }: WelcomeScreenProps) {
+export function WelcomeScreen({
+  onSuggestionClick,
+  agentName,
+  agentDescription,
+  demoMode,
+}: WelcomeScreenProps) {
   return (
     <div className="flex flex-col items-center justify-center min-h-full px-4 py-12">
       {/* Logo and Title */}
@@ -64,6 +72,17 @@ export function WelcomeScreen({ onSuggestionClick }: WelcomeScreenProps) {
         <p className="text-muted-foreground text-center max-w-md text-pretty">
           Tu asistente de IA inteligente. Pregúntame lo que quieras o elige una de las sugerencias.
         </p>
+        {agentName && (
+          <div className="mt-3 text-center">
+            <p className="text-sm font-medium text-foreground">Agente: {agentName}</p>
+            {agentDescription && (
+              <p className="text-xs text-muted-foreground">{agentDescription}</p>
+            )}
+          </div>
+        )}
+        {demoMode && (
+          <p className="mt-2 text-xs text-primary">Modo demo gratuito activado</p>
+        )}
       </div>
 
       {/* Suggestions Grid */}
