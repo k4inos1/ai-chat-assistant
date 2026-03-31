@@ -80,7 +80,7 @@ export function ChatContainer() {
         }
       } catch (error) {
         if (error instanceof DOMException && error.name === 'AbortError') return
-        console.warn('Suggestion load error:', error)
+        console.warn('Error al cargar sugerencias:', error)
       }
     }
 
@@ -101,7 +101,7 @@ export function ChatContainer() {
           throw new Error(`No se pudo borrar la conversación (${response.status})`)
         }
       } catch (error) {
-        console.warn('Failed to delete conversation:', error)
+        console.warn('Error al borrar la conversación:', error)
       }
     }
     clearMessages()
@@ -127,7 +127,7 @@ export function ChatContainer() {
           throw new Error(`No se pudo enviar la valoración (${response.status})`)
         }
       } catch (error) {
-        console.warn('Feedback error:', error)
+        console.warn('Error al enviar valoración:', error)
       }
     },
     [conversationId]
