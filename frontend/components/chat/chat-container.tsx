@@ -20,6 +20,7 @@ export function ChatContainer() {
   const [agentError, setAgentError] = useState<string | null>(null)
   const [suggestions, setSuggestions] = useState<string[]>([])
   const agentInitializedRef = useRef(false)
+  const conversationIdRef = useRef<string | null>(null)
 
   const { messages, isLoading, sendMessage, stopGeneration, clearMessages, conversationId } = useChat({
     onError: (error) => {
@@ -63,6 +64,10 @@ export function ChatContainer() {
   }, [])
 
   useEffect(() => {
+    conversationIdRef.current = conversationId
+  }, [conversationId])
+
+  useEffect(() => {
     const controller = new AbortController()
 
     const loadSuggestions = async () => {
@@ -92,7 +97,7 @@ export function ChatContainer() {
   }, [])
 
   const handleClearChat = useCallback(async () => {
-    const currentConversationId = conversationId
+    const currentConversationId = conversationIdRef.current
     clearMessages()
     if (currentConversationId) {
       try {
@@ -106,11 +111,14 @@ export function ChatContainer() {
         console.warn('Error al borrar la conversación:', error)
       }
     }
-  }, [conversationId, clearMessages])
+  }, [clearMessages])
 
   const handleFeedback = useCallback(
     async (messageIndex: number, rating: 'up' | 'down') => {
-      if (!conversationId) return
+      if (!conversationId) {
+        console.warn('No hay una conversación activa para registrar la valoración.')
+        return
+      }
       try {
         const response = await fetch(apiUrl('/feedback'), {
           method: 'POST',
