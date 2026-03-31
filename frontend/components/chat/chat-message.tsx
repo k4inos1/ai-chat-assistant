@@ -36,10 +36,10 @@ export function ChatMessage({
 
   const handleFeedback = (value: 'up' | 'down') => {
     if (isFeedbackDisabled) return
-    const nextValue = feedback === value ? null : value
-    setFeedback(nextValue)
-    if (nextValue && onFeedback) {
-      onFeedback(nextValue)
+    if (feedback === value) return
+    setFeedback(value)
+    if (onFeedback) {
+      onFeedback(value)
     }
   }
 
