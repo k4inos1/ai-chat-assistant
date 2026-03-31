@@ -34,7 +34,7 @@ pip install -e .
 fastapi run main.py
 ```
 
-The API exposes `/chat` (streaming), `/agents` (lista de agentes) and `/health`.
+The API exposes `/chat` (streaming), `/agents` (list of agents) and `/health`.
 
 ### Modo demo gratuito
 
