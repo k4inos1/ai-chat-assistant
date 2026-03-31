@@ -5,6 +5,8 @@ Intelligent chatbot with OpenAI integration and conversation memory
 
 import os
 import json
+import asyncio
+import random
 from datetime import datetime
 from typing import AsyncGenerator
 
@@ -13,7 +15,12 @@ import fastapi.middleware.cors
 from fastapi import HTTPException
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
-from openai import AsyncOpenAI
+
+# Check if we're in demo mode (no API key)
+DEMO_MODE = not os.getenv("OPENAI_API_KEY")
+
+if not DEMO_MODE:
+    from openai import AsyncOpenAI
 
 app = fastapi.FastAPI(title="AI Chat Assistant API")
 

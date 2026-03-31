@@ -25,8 +25,22 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Initialize OpenAI client
-client = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+# OpenAI client (lazy initialization)
+_client: AsyncOpenAI | None = None
+
+
+def get_openai_client() -> AsyncOpenAI:
+    """Get or create the OpenAI client with lazy initialization"""
+    global _client
+    if _client is None:
+        api_key = os.getenv("OPENAI_API_KEY")
+        if not api_key:
+            raise HTTPException(
+                status_code=500,
+                detail="OPENAI_API_KEY environment variable is not set"
+            )
+        _client = AsyncOpenAI(api_key=api_key)
+    return _client
 
 # In-memory conversation storage (for demo - use database in production)
 conversations: dict[str, list] = {}
@@ -94,6 +108,7 @@ async def chat(request: ChatRequest):
         try:
             full_response = ""
             
+            client = get_openai_client()
             stream = await client.chat.completions.create(
                 model="gpt-4o-mini",
                 messages=messages,
