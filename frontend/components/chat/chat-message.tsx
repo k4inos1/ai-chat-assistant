@@ -9,11 +9,13 @@ interface ChatMessageProps {
   role: 'user' | 'assistant'
   content: string
   isStreaming?: boolean
+  onFeedback?: (rating: 'up' | 'down') => Promise<void> | void
 }
 
-export function ChatMessage({ role, content, isStreaming }: ChatMessageProps) {
+export function ChatMessage({ role, content, isStreaming, onFeedback }: ChatMessageProps) {
   const [copied, setCopied] = useState(false)
   const [feedback, setFeedback] = useState<'up' | 'down' | null>(null)
+  const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false)
 
   const isUser = role === 'user'
 
@@ -21,6 +23,25 @@ export function ChatMessage({ role, content, isStreaming }: ChatMessageProps) {
     await navigator.clipboard.writeText(content)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
+  }
+
+  const handleFeedback = async (rating: 'up' | 'down') => {
+    if (isSubmittingFeedback) return
+
+    const nextFeedback = feedback === rating ? null : rating
+    setFeedback(nextFeedback)
+
+    if (!onFeedback || !nextFeedback) return
+
+    setIsSubmittingFeedback(true)
+    try {
+      await onFeedback(nextFeedback)
+    } catch (error) {
+      console.error('Error sending feedback:', error)
+      setFeedback(null)
+    } finally {
+      setIsSubmittingFeedback(false)
+    }
   }
 
   return (
@@ -110,7 +131,8 @@ export function ChatMessage({ role, content, isStreaming }: ChatMessageProps) {
               )}
             </button>
             <button
-              onClick={() => setFeedback(feedback === 'up' ? null : 'up')}
+              onClick={() => handleFeedback('up')}
+              disabled={isSubmittingFeedback}
               className={cn(
                 "p-1.5 rounded-md hover:bg-secondary transition-colors",
                 feedback === 'up' 
@@ -122,7 +144,8 @@ export function ChatMessage({ role, content, isStreaming }: ChatMessageProps) {
               <ThumbsUp className="w-4 h-4" />
             </button>
             <button
-              onClick={() => setFeedback(feedback === 'down' ? null : 'down')}
+              onClick={() => handleFeedback('down')}
+              disabled={isSubmittingFeedback}
               className={cn(
                 "p-1.5 rounded-md hover:bg-secondary transition-colors",
                 feedback === 'down' 

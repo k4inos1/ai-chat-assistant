@@ -14,9 +14,10 @@ export function ChatContainer() {
   const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null)
   const [demoMode, setDemoMode] = useState(false)
   const [agentError, setAgentError] = useState<string | null>(null)
+  const [feedbackError, setFeedbackError] = useState<string | null>(null)
   const agentInitializedRef = useRef(false)
 
-  const { messages, isLoading, sendMessage, stopGeneration, clearMessages } = useChat({
+  const { messages, isLoading, sendMessage, stopGeneration, clearMessages, conversationId } = useChat({
     onError: (error) => {
       console.error('Chat error:', error)
     },
@@ -74,6 +75,33 @@ export function ChatContainer() {
     sendMessage(suggestion)
   }
 
+  const handleFeedback = async (messageIndex: number, rating: 'up' | 'down') => {
+    if (!conversationId) {
+      const errorMessage = 'La conversación aún no está lista para recibir feedback.'
+      setFeedbackError(errorMessage)
+      throw new Error(errorMessage)
+    }
+
+    setFeedbackError(null)
+    const response = await fetch(apiUrl('/feedback'), {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        conversation_id: conversationId,
+        message_index: messageIndex,
+        rating: rating === 'up' ? 5 : 1,
+      }),
+    })
+
+    if (!response.ok) {
+      const errorMessage = 'No se pudo enviar tu valoración. Intenta nuevamente.'
+      setFeedbackError(errorMessage)
+      throw new Error(errorMessage)
+    }
+  }
+
   return (
     <div className="flex flex-col h-full">
       <ChatHeader
@@ -87,6 +115,11 @@ export function ChatContainer() {
       {agentError && (
         <div className="mx-auto mt-3 w-full max-w-4xl px-4 text-xs text-destructive">
           {agentError}
+        </div>
+      )}
+      {feedbackError && (
+        <div className="mx-auto mt-3 w-full max-w-4xl px-4 text-xs text-destructive">
+          {feedbackError}
         </div>
       )}
       {/* Messages Area */}
@@ -106,6 +139,11 @@ export function ChatContainer() {
                 role={message.role}
                 content={message.content}
                 isStreaming={isLoading && index === messages.length - 1 && message.role === 'assistant'}
+                onFeedback={
+                  message.role === 'assistant'
+                    ? (rating) => handleFeedback(index, rating)
+                    : undefined
+                }
               />
             ))}
             <div ref={messagesEndRef} />

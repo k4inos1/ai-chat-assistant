@@ -46,6 +46,9 @@ Para desarrollo local con frontend separado, puedes definir:
 export NEXT_PUBLIC_API_BASE_URL="http://localhost:8000"
 ```
 
+Si no defines `NEXT_PUBLIC_API_BASE_URL`, el frontend usa `/api/*` y proxya las
+peticiones al backend local en `http://127.0.0.1:8000` por defecto.
+
 ## Learn More
 
 To learn more, take a look at the following resources:
