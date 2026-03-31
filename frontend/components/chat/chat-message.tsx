@@ -9,18 +9,38 @@ interface ChatMessageProps {
   role: 'user' | 'assistant'
   content: string
   isStreaming?: boolean
+  assistantName?: string
+  onFeedback?: (rating: 'up' | 'down') => void
+  feedbackDisabled?: boolean
 }
 
-export function ChatMessage({ role, content, isStreaming }: ChatMessageProps) {
+export function ChatMessage({
+  role,
+  content,
+  isStreaming,
+  assistantName = 'NexusAI',
+  onFeedback,
+  feedbackDisabled,
+}: ChatMessageProps) {
   const [copied, setCopied] = useState(false)
   const [feedback, setFeedback] = useState<'up' | 'down' | null>(null)
 
   const isUser = role === 'user'
+  const isFeedbackDisabled = feedbackDisabled || !onFeedback
 
   const copyToClipboard = async () => {
     await navigator.clipboard.writeText(content)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
+  }
+
+  const handleFeedback = (value: 'up' | 'down') => {
+    if (isFeedbackDisabled) return
+    const nextValue = feedback === value ? null : value
+    setFeedback(nextValue)
+    if (nextValue && onFeedback) {
+      onFeedback(nextValue)
+    }
   }
 
   return (
@@ -50,7 +70,7 @@ export function ChatMessage({ role, content, isStreaming }: ChatMessageProps) {
       <div className="flex-1 min-w-0 space-y-2">
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium text-foreground">
-            {isUser ? 'Tú' : 'NexusAI'}
+            {isUser ? 'Tú' : assistantName}
           </span>
         </div>
 
@@ -110,24 +130,28 @@ export function ChatMessage({ role, content, isStreaming }: ChatMessageProps) {
               )}
             </button>
             <button
-              onClick={() => setFeedback(feedback === 'up' ? null : 'up')}
+              onClick={() => handleFeedback('up')}
+              disabled={isFeedbackDisabled}
               className={cn(
                 "p-1.5 rounded-md hover:bg-secondary transition-colors",
                 feedback === 'up' 
                   ? "text-primary" 
-                  : "text-muted-foreground hover:text-foreground"
+                  : "text-muted-foreground hover:text-foreground",
+                isFeedbackDisabled && "cursor-not-allowed opacity-60"
               )}
               title="Buena respuesta"
             >
               <ThumbsUp className="w-4 h-4" />
             </button>
             <button
-              onClick={() => setFeedback(feedback === 'down' ? null : 'down')}
+              onClick={() => handleFeedback('down')}
+              disabled={isFeedbackDisabled}
               className={cn(
                 "p-1.5 rounded-md hover:bg-secondary transition-colors",
                 feedback === 'down' 
                   ? "text-destructive" 
-                  : "text-muted-foreground hover:text-foreground"
+                  : "text-muted-foreground hover:text-foreground",
+                isFeedbackDisabled && "cursor-not-allowed opacity-60"
               )}
               title="Mala respuesta"
             >

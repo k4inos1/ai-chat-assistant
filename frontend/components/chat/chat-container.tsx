@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useChat } from '@/hooks/use-chat'
 import { ChatMessage } from './chat-message'
 import { ChatInput } from './chat-input'
@@ -14,9 +14,10 @@ export function ChatContainer() {
   const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null)
   const [demoMode, setDemoMode] = useState(false)
   const [agentError, setAgentError] = useState<string | null>(null)
+  const [suggestions, setSuggestions] = useState<string[]>([])
   const agentInitializedRef = useRef(false)
 
-  const { messages, isLoading, sendMessage, stopGeneration, clearMessages } = useChat({
+  const { messages, isLoading, sendMessage, stopGeneration, clearMessages, conversationId } = useChat({
     onError: (error) => {
       console.error('Chat error:', error)
     },
@@ -58,12 +59,78 @@ export function ChatContainer() {
   }, [])
 
   useEffect(() => {
+    let isActive = true
+
+    const loadSuggestions = async () => {
+      try {
+        const response = await fetch(apiUrl('/suggestions'))
+        if (!response.ok) {
+          throw new Error('No se pudieron cargar las sugerencias')
+        }
+        const data = await response.json()
+        if (!isActive) return
+        if (Array.isArray(data.suggestions)) {
+          setSuggestions(data.suggestions.filter((item: unknown) => typeof item === 'string'))
+        }
+      } catch (error) {
+        if (!isActive) return
+        console.warn('Suggestion load error:', error)
+      }
+    }
+
+    loadSuggestions()
+
+    return () => {
+      isActive = false
+    }
+  }, [])
+
+  const handleClearChat = useCallback(async () => {
+    if (conversationId) {
+      try {
+        await fetch(apiUrl(`/conversations/${encodeURIComponent(conversationId)}`), {
+          method: 'DELETE',
+        })
+      } catch (error) {
+        console.warn('Failed to delete conversation:', error)
+      }
+    }
+    clearMessages()
+  }, [conversationId, clearMessages])
+
+  const handleFeedback = useCallback(
+    async (messageIndex: number, rating: 'up' | 'down') => {
+      if (!conversationId) return
+      try {
+        const response = await fetch(apiUrl('/feedback'), {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            conversation_id: conversationId,
+            message_index: messageIndex,
+            rating: rating === 'up' ? 5 : 1,
+          }),
+        })
+
+        if (!response.ok) {
+          throw new Error('No se pudo enviar la valoración')
+        }
+      } catch (error) {
+        console.warn('Feedback error:', error)
+      }
+    },
+    [conversationId]
+  )
+
+  useEffect(() => {
     if (!selectedAgentId) return
     if (agentInitializedRef.current) {
-      clearMessages()
+      handleClearChat()
     }
     agentInitializedRef.current = true
-  }, [selectedAgentId, clearMessages])
+  }, [selectedAgentId, handleClearChat])
 
   // Auto-scroll to bottom
   useEffect(() => {
@@ -77,7 +144,7 @@ export function ChatContainer() {
   return (
     <div className="flex flex-col h-full">
       <ChatHeader
-        onClearChat={clearMessages}
+        onClearChat={handleClearChat}
         agents={agents}
         selectedAgentId={selectedAgentId}
         onAgentChange={setSelectedAgentId}
@@ -97,6 +164,7 @@ export function ChatContainer() {
             agentName={selectedAgent?.name}
             agentDescription={selectedAgent?.description}
             demoMode={demoMode}
+            suggestions={suggestions}
           />
         ) : (
           <div className="max-w-4xl mx-auto">
@@ -106,6 +174,13 @@ export function ChatContainer() {
                 role={message.role}
                 content={message.content}
                 isStreaming={isLoading && index === messages.length - 1 && message.role === 'assistant'}
+                assistantName={selectedAgent?.name}
+                feedbackDisabled={!conversationId}
+                onFeedback={
+                  message.role === 'assistant'
+                    ? (rating) => handleFeedback(index, rating)
+                    : undefined
+                }
               />
             ))}
             <div ref={messagesEndRef} />
