@@ -62,6 +62,10 @@ export function WelcomeScreen({
       ? suggestions
       : suggestionTemplates.map(item => item.defaultPrompt)
 
+  if (promptList.length > suggestionTemplates.length) {
+    console.warn('Se recibieron más sugerencias de las que se pueden mostrar.')
+  }
+
   const normalizedPrompts = promptList.slice(0, suggestionTemplates.length)
   const suggestionCards = normalizedPrompts.map((prompt, index) => {
     const template = suggestionTemplates[index % suggestionTemplates.length]

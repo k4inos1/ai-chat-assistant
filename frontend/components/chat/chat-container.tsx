@@ -7,6 +7,7 @@ import { ChatInput } from './chat-input'
 import { WelcomeScreen } from './welcome-screen'
 import { ChatHeader } from './chat-header'
 import type { AgentSummary, AgentsResponse } from '@/types/agent'
+import type { SuggestionsResponse } from '@/types/suggestion'
 import { apiUrl } from '@/lib/api'
 
 const RATING_POSITIVE = 5
@@ -62,21 +63,23 @@ export function ChatContainer() {
   }, [])
 
   useEffect(() => {
-    let isActive = true
+    const controller = new AbortController()
 
     const loadSuggestions = async () => {
       try {
-        const response = await fetch(apiUrl('/suggestions'))
+        const response = await fetch(apiUrl('/suggestions'), {
+          signal: controller.signal,
+        })
         if (!response.ok) {
           throw new Error(`No se pudieron cargar las sugerencias (${response.status})`)
         }
-        const data = await response.json()
-        if (!isActive) return
+        const data: SuggestionsResponse = await response.json()
         if (Array.isArray(data.suggestions)) {
-          setSuggestions(data.suggestions.filter((item: unknown) => typeof item === 'string'))
+          const sanitizedSuggestions = data.suggestions.filter((item) => typeof item === 'string')
+          setSuggestions(sanitizedSuggestions)
         }
       } catch (error) {
-        if (!isActive) return
+        if (error instanceof DOMException && error.name === 'AbortError') return
         console.warn('Suggestion load error:', error)
       }
     }
@@ -84,7 +87,7 @@ export function ChatContainer() {
     loadSuggestions()
 
     return () => {
-      isActive = false
+      controller.abort()
     }
   }, [])
 
