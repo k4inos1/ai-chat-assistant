@@ -38,9 +38,7 @@ export function ChatMessage({
     if (isFeedbackDisabled) return
     if (feedback === value) return
     setFeedback(value)
-    if (onFeedback) {
-      onFeedback(value)
-    }
+    onFeedback?.(value)
   }
 
   return (

@@ -9,6 +9,9 @@ import { ChatHeader } from './chat-header'
 import type { AgentSummary, AgentsResponse } from '@/types/agent'
 import { apiUrl } from '@/lib/api'
 
+const RATING_POSITIVE = 5
+const RATING_NEGATIVE = 1
+
 export function ChatContainer() {
   const [agents, setAgents] = useState<AgentSummary[]>([])
   const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null)
@@ -65,7 +68,7 @@ export function ChatContainer() {
       try {
         const response = await fetch(apiUrl('/suggestions'))
         if (!response.ok) {
-          throw new Error('No se pudieron cargar las sugerencias')
+          throw new Error(`No se pudieron cargar las sugerencias (${response.status})`)
         }
         const data = await response.json()
         if (!isActive) return
@@ -88,9 +91,12 @@ export function ChatContainer() {
   const handleClearChat = useCallback(async () => {
     if (conversationId) {
       try {
-        await fetch(apiUrl(`/conversations/${encodeURIComponent(conversationId)}`), {
+        const response = await fetch(apiUrl(`/conversations/${encodeURIComponent(conversationId)}`), {
           method: 'DELETE',
         })
+        if (!response.ok) {
+          throw new Error(`No se pudo borrar la conversación (${response.status})`)
+        }
       } catch (error) {
         console.warn('Failed to delete conversation:', error)
       }
@@ -110,12 +116,12 @@ export function ChatContainer() {
           body: JSON.stringify({
             conversation_id: conversationId,
             message_index: messageIndex,
-            rating: rating === 'up' ? 5 : 1,
+            rating: rating === 'up' ? RATING_POSITIVE : RATING_NEGATIVE,
           }),
         })
 
         if (!response.ok) {
-          throw new Error('No se pudo enviar la valoración')
+          throw new Error(`No se pudo enviar la valoración (${response.status})`)
         }
       } catch (error) {
         console.warn('Feedback error:', error)

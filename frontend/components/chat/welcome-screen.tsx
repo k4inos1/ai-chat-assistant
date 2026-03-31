@@ -62,7 +62,8 @@ export function WelcomeScreen({
       ? suggestions
       : suggestionTemplates.map(item => item.defaultPrompt)
 
-  const suggestionCards = promptList.map((prompt, index) => {
+  const normalizedPrompts = promptList.slice(0, suggestionTemplates.length)
+  const suggestionCards = normalizedPrompts.map((prompt, index) => {
     const template = suggestionTemplates[index % suggestionTemplates.length]
     return {
       icon: template.icon,
