@@ -1,8 +1,0 @@
-Metadata-Version: 2.4
-Name: ai-chat-backend
-Version: 0.1.0
-Summary: AI Chat Assistant - FastAPI backend with OpenAI integration
-Requires-Python: >=3.12
-Requires-Dist: fastapi[standard]>=0.128.1
-Requires-Dist: openai>=1.30.0
-Requires-Dist: pydantic>=2.0.0

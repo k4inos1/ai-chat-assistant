@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useCallback, useRef } from 'react'
+import { apiUrl } from '@/lib/api'
 
 export interface Message {
   id: string
@@ -11,9 +12,11 @@ export interface Message {
 
 interface UseChatOptions {
   onError?: (error: Error) => void
+  agentId?: string | null
 }
 
 export function useChat(options: UseChatOptions = {}) {
+  const { onError, agentId } = options
   const [messages, setMessages] = useState<Message[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [conversationId, setConversationId] = useState<string | null>(null)
@@ -48,15 +51,21 @@ export function useChat(options: UseChatOptions = {}) {
     abortControllerRef.current = new AbortController()
 
     try {
-      const response = await fetch('/api/chat', {
+      const payload: Record<string, unknown> = {
+        message: content.trim(),
+        conversation_id: conversationId,
+      }
+
+      if (agentId) {
+        payload.agent_id = agentId
+      }
+
+      const response = await fetch(apiUrl('/chat'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          message: content.trim(),
-          conversation_id: conversationId,
-        }),
+        body: JSON.stringify(payload),
         signal: abortControllerRef.current.signal,
       })
 
@@ -110,14 +119,14 @@ export function useChat(options: UseChatOptions = {}) {
       // Remove the empty assistant message on error
       setMessages(prev => prev.filter(msg => msg.id !== assistantMessageId))
       
-      if (options.onError && error instanceof Error) {
-        options.onError(error)
+      if (onError && error instanceof Error) {
+        onError(error)
       }
     } finally {
       setIsLoading(false)
       abortControllerRef.current = null
     }
-  }, [isLoading, conversationId, options])
+   }, [isLoading, conversationId, agentId, onError])
 
   const stopGeneration = useCallback(() => {
     if (abortControllerRef.current) {

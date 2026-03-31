@@ -24,6 +24,28 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
+## Backend (FastAPI)
+
+Start the API server from the `backend` folder:
+
+```bash
+cd backend
+pip install -e .
+fastapi run main.py
+```
+
+The API exposes `/chat` (streaming), `/agents` (lista de agentes) and `/health`.
+
+### Modo demo gratuito
+
+Si `OPENAI_API_KEY` no está configurada, el backend entra en modo demo y responde con un flujo local para poder conversar sin costo.
+
+Para desarrollo local con frontend separado, puedes definir:
+
+```bash
+export NEXT_PUBLIC_API_BASE_URL="http://localhost:8000"
+```
+
 ## Learn More
 
 To learn more, take a look at the following resources:
