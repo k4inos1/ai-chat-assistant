@@ -92,9 +92,11 @@ export function ChatContainer() {
   }, [])
 
   const handleClearChat = useCallback(async () => {
-    if (conversationId) {
+    const currentConversationId = conversationId
+    clearMessages()
+    if (currentConversationId) {
       try {
-        const response = await fetch(apiUrl(`/conversations/${encodeURIComponent(conversationId)}`), {
+        const response = await fetch(apiUrl(`/conversations/${encodeURIComponent(currentConversationId)}`), {
           method: 'DELETE',
         })
         if (!response.ok) {
@@ -104,7 +106,6 @@ export function ChatContainer() {
         console.warn('Error al borrar la conversación:', error)
       }
     }
-    clearMessages()
   }, [conversationId, clearMessages])
 
   const handleFeedback = useCallback(
