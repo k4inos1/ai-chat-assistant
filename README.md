@@ -1,32 +1,29 @@
-# ai-chat-assistant
+# AI Chat Assistant
 
-This is a [Next.js](https://nextjs.org) project bootstrapped with [v0](https://v0.app).
+Asistente de chat con múltiples agentes, streaming en tiempo real y una arquitectura full‑stack moderna. El frontend está construido con Next.js + React + TypeScript y el backend con FastAPI.
 
-## Built with v0
+## Características
 
-This repository is linked to a [v0](https://v0.app) project. You can continue developing by visiting the link below -- start new chats to make changes, and v0 will push commits directly to this repo. Every merge to `main` will automatically deploy.
+- **Chat en tiempo real (SSE)** con respuestas en streaming.
+- **Múltiples agentes** con personalidades configurables.
+- **Soporte Markdown** y UI moderna.
+- **Modo demo gratuito** cuando no existe `OPENAI_API_KEY`.
+- **Separación clara** entre frontend y backend.
 
-[Continue working on v0 →](https://v0.app/chat/projects/prj_swN1cqOk6eIPbK0uYlSrAp1795L0)
+## Arquitectura
 
-## Getting Started
+- **Frontend**: Next.js 16, React 19, TypeScript, Tailwind CSS.
+- **Backend**: FastAPI (Python 3.12+), OpenAI SDK, Pydantic.
+- **Infra**: `vercel.json` listo para despliegue en Vercel.
 
-First, run the development server:
+## Requisitos
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-```
+- **Node.js** 20+
+- **Python** 3.12+
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Configuración local
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-## Backend (FastAPI)
-
-Start the API server from the `backend` folder:
+### 1) Backend (FastAPI)
 
 ```bash
 cd backend
@@ -34,27 +31,69 @@ pip install -e .
 fastapi run main.py
 ```
 
-The API exposes `/chat` (streaming), `/agents` (list of agents) and `/health`.
+Endpoints principales:
 
-### Modo demo gratuito
+- `GET /health`
+- `GET /agents`
+- `POST /chat` (streaming)
 
-Si `OPENAI_API_KEY` no está configurada, el backend entra en modo demo y responde con un flujo local para poder conversar sin costo.
+### 2) Frontend (Next.js)
 
-Para desarrollo local con frontend separado, puedes definir:
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Abre [http://localhost:3000](http://localhost:3000).
+
+## Variables de entorno
+
+| Variable | Descripción | Requerida |
+| --- | --- | --- |
+| `OPENAI_API_KEY` | API key para OpenAI (backend). | No (activa modo demo si falta) |
+| `NEXT_PUBLIC_API_BASE_URL` | Base URL del backend para el frontend. | No (default: `http://localhost:8000`) |
+
+Ejemplo:
 
 ```bash
 export NEXT_PUBLIC_API_BASE_URL="http://localhost:8000"
+export OPENAI_API_KEY="sk-..."
 ```
 
-Si no defines `NEXT_PUBLIC_API_BASE_URL`, el frontend usa `/api/*` y proxea las
-peticiones al backend local en `http://127.0.0.1:8000` por defecto.
+## Scripts útiles
 
-## Learn More
+### Frontend
 
-To learn more, take a look at the following resources:
+```bash
+npm run dev
+npm run build
+npm start
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-- [v0 Documentation](https://v0.app/docs) - learn about v0 and how to use it.
+### Backend
 
-<a href="https://v0.app/chat/api/kiro/clone/k4inos1/ai-chat-assistant" alt="Open in Kiro"><img src="https://pdgvvgmkdvyeydso.public.blob.vercel-storage.com/open%20in%20kiro.svg?sanitize=true" /></a>
+```bash
+pytest backend/
+flake8 backend --count --select=E9,F63,F7,F82 --show-source --statistics
+flake8 backend --count --exit-zero --max-complexity=10 --max-line-length=127
+```
+
+## Estructura del repositorio
+
+```
+.
+├── backend/    # API FastAPI
+├── frontend/   # App Next.js
+├── public/     # Assets estáticos
+├── styles/     # CSS global
+└── vercel.json # Configuración de despliegue
+```
+
+## Contribución
+
+Si deseas proponer mejoras, abre un issue o un pull request con una descripción clara del cambio y pasos de verificación.
+
+## Créditos
+
+Proyecto iniciado con [v0](https://v0.app) y evolucionado en este repositorio.
