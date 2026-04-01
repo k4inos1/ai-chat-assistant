@@ -9,21 +9,13 @@ interface ChatMessageProps {
   role: 'user' | 'assistant'
   content: string
   isStreaming?: boolean
-  assistantName?: string
-  onFeedback?: (rating: 'up' | 'down') => void
-  feedbackDisabled?: boolean
+  onFeedback?: (rating: 'up' | 'down') => Promise<void> | void
 }
 
-export function ChatMessage({
-  role,
-  content,
-  isStreaming,
-  assistantName = 'NexusAI',
-  onFeedback,
-  feedbackDisabled,
-}: ChatMessageProps) {
+export function ChatMessage({ role, content, isStreaming, onFeedback }: ChatMessageProps) {
   const [copied, setCopied] = useState(false)
   const [feedback, setFeedback] = useState<'up' | 'down' | null>(null)
+  const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false)
 
   const isUser = role === 'user'
   const isFeedbackDisabled = feedbackDisabled || !onFeedback
@@ -34,12 +26,22 @@ export function ChatMessage({
     setTimeout(() => setCopied(false), 2000)
   }
 
-  const handleFeedback = (value: 'up' | 'down') => {
-    if (isFeedbackDisabled) return
-    const nextValue = feedback === value ? null : value
-    setFeedback(nextValue)
-    if (nextValue && onFeedback) {
-      onFeedback(nextValue)
+  const handleFeedback = async (rating: 'up' | 'down') => {
+    if (isSubmittingFeedback) return
+
+    const nextFeedback = feedback === rating ? null : rating
+    setFeedback(nextFeedback)
+
+    if (!onFeedback || !nextFeedback) return
+
+    setIsSubmittingFeedback(true)
+    try {
+      await onFeedback(nextFeedback)
+    } catch (error) {
+      console.error('Error sending feedback:', error)
+      setFeedback(null)
+    } finally {
+      setIsSubmittingFeedback(false)
     }
   }
 
@@ -131,7 +133,7 @@ export function ChatMessage({
             </button>
             <button
               onClick={() => handleFeedback('up')}
-              disabled={isFeedbackDisabled}
+              disabled={isSubmittingFeedback}
               className={cn(
                 "p-1.5 rounded-md hover:bg-secondary transition-colors",
                 feedback === 'up' 
@@ -145,7 +147,7 @@ export function ChatMessage({
             </button>
             <button
               onClick={() => handleFeedback('down')}
-              disabled={isFeedbackDisabled}
+              disabled={isSubmittingFeedback}
               className={cn(
                 "p-1.5 rounded-md hover:bg-secondary transition-colors",
                 feedback === 'down' 

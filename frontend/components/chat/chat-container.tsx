@@ -10,15 +10,17 @@ import type { AgentSummary, AgentsResponse } from '@/types/agent'
 import type { SuggestionsResponse } from '@/types/suggestion'
 import { apiUrl } from '@/lib/api'
 
-const RATING_POSITIVE = 5
-const RATING_NEGATIVE = 1
+const FEEDBACK_RATING: Record<'up' | 'down', number> = {
+  up: 5,
+  down: 1,
+}
 
 export function ChatContainer() {
   const [agents, setAgents] = useState<AgentSummary[]>([])
   const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null)
   const [demoMode, setDemoMode] = useState(false)
   const [agentError, setAgentError] = useState<string | null>(null)
-  const [suggestions, setSuggestions] = useState<string[]>([])
+  const [feedbackError, setFeedbackError] = useState<string | null>(null)
   const agentInitializedRef = useRef(false)
   const conversationIdRef = useRef<string | null>(null)
 
@@ -159,6 +161,33 @@ export function ChatContainer() {
     sendMessage(suggestion)
   }
 
+  const handleFeedback = async (messageIndex: number, rating: 'up' | 'down') => {
+    if (!conversationId) {
+      const errorMessage = 'Envía un mensaje y espera a que exista una conversación activa antes de enviar feedback.'
+      setFeedbackError(errorMessage)
+      throw new Error(errorMessage)
+    }
+
+    setFeedbackError(null)
+    const response = await fetch(apiUrl('/feedback'), {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        conversation_id: conversationId,
+        message_index: messageIndex,
+        rating: FEEDBACK_RATING[rating],
+      }),
+    })
+
+    if (!response.ok) {
+      const errorMessage = 'No se pudo enviar tu valoración. Intenta nuevamente.'
+      setFeedbackError(errorMessage)
+      throw new Error(errorMessage)
+    }
+  }
+
   return (
     <div className="flex flex-col h-full">
       <ChatHeader
@@ -172,6 +201,11 @@ export function ChatContainer() {
       {agentError && (
         <div className="mx-auto mt-3 w-full max-w-4xl px-4 text-xs text-destructive">
           {agentError}
+        </div>
+      )}
+      {feedbackError && (
+        <div className="mx-auto mt-3 w-full max-w-4xl px-4 text-xs text-destructive">
+          {feedbackError}
         </div>
       )}
       {/* Messages Area */}
@@ -192,8 +226,6 @@ export function ChatContainer() {
                 role={message.role}
                 content={message.content}
                 isStreaming={isLoading && index === messages.length - 1 && message.role === 'assistant'}
-                assistantName={selectedAgent?.name}
-                feedbackDisabled={!conversationId}
                 onFeedback={
                   message.role === 'assistant'
                     ? (rating) => handleFeedback(index, rating)
