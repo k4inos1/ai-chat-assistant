@@ -42,6 +42,14 @@ const proxyRequest = async (request: Request) => {
   } catch (error) {
     const message =
       error instanceof Error ? error.message : 'Backend unavailable'
+
+    console.error('Proxy error', {
+      method: request.method,
+      targetUrl,
+      message,
+      // Avoid logging request body or other potentially sensitive data
+    }, error)
+
     return Response.json({ error: message }, { status: 502 })
   }
 }
