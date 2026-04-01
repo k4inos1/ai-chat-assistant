@@ -8,43 +8,44 @@ interface WelcomeScreenProps {
   agentName?: string
   agentDescription?: string
   demoMode?: boolean
+  suggestions?: string[]
 }
 
-const suggestions = [
+const suggestionTemplates = [
   {
     icon: Code,
     title: "Ayuda con código",
-    prompt: "Escribe código Python para ordenar una lista de números",
+    defaultPrompt: "Escribe código Python para ordenar una lista de números",
     color: "text-blue-500"
   },
   {
     icon: Pencil,
     title: "Escribir contenido",
-    prompt: "Ayúdame a escribir un correo profesional",
+    defaultPrompt: "Ayúdame a escribir un correo profesional",
     color: "text-green-500"
   },
   {
     icon: Lightbulb,
     title: "Ideas creativas",
-    prompt: "Dame ideas para un proyecto de programación",
+    defaultPrompt: "Dame ideas para un proyecto de programación",
     color: "text-yellow-500"
   },
   {
     icon: FileText,
     title: "Resumir textos",
-    prompt: "Resume este texto que te voy a compartir",
+    defaultPrompt: "Resume este texto que te voy a compartir",
     color: "text-purple-500"
   },
   {
     icon: Languages,
     title: "Traducir",
-    prompt: "Traduce este párrafo al inglés",
+    defaultPrompt: "Traduce este párrafo al inglés",
     color: "text-pink-500"
   },
   {
     icon: Zap,
     title: "Explicaciones",
-    prompt: "Explícame cómo funciona la inteligencia artificial",
+    defaultPrompt: "Explícame cómo funciona la inteligencia artificial",
     color: "text-orange-500"
   }
 ]
@@ -54,7 +55,28 @@ export function WelcomeScreen({
   agentName,
   agentDescription,
   demoMode,
+  suggestions,
 }: WelcomeScreenProps) {
+  const promptList =
+    suggestions && suggestions.length > 0
+      ? suggestions
+      : suggestionTemplates.map(item => item.defaultPrompt)
+
+  if (promptList.length > suggestionTemplates.length) {
+    console.warn('Se recibieron más sugerencias de las que se pueden mostrar.')
+  }
+
+  const normalizedPrompts = promptList.slice(0, suggestionTemplates.length)
+  const suggestionCards = normalizedPrompts.map((prompt, index) => {
+    const template = suggestionTemplates[index % suggestionTemplates.length]
+    return {
+      icon: template.icon,
+      title: template.title,
+      color: template.color,
+      prompt,
+    }
+  })
+
   return (
     <div className="flex flex-col items-center justify-center min-h-full px-4 py-12">
       {/* Logo and Title */}
@@ -87,7 +109,7 @@ export function WelcomeScreen({
 
       {/* Suggestions Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 w-full max-w-3xl">
-        {suggestions.map((suggestion, index) => (
+        {suggestionCards.map((suggestion, index) => (
           <button
             key={index}
             onClick={() => onSuggestionClick(suggestion.prompt)}

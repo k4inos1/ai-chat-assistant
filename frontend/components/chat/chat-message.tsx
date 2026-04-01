@@ -18,6 +18,7 @@ export function ChatMessage({ role, content, isStreaming, onFeedback }: ChatMess
   const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false)
 
   const isUser = role === 'user'
+  const isFeedbackDisabled = feedbackDisabled || !onFeedback
 
   const copyToClipboard = async () => {
     await navigator.clipboard.writeText(content)
@@ -71,7 +72,7 @@ export function ChatMessage({ role, content, isStreaming, onFeedback }: ChatMess
       <div className="flex-1 min-w-0 space-y-2">
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium text-foreground">
-            {isUser ? 'Tú' : 'NexusAI'}
+            {isUser ? 'Tú' : assistantName}
           </span>
         </div>
 
@@ -137,7 +138,8 @@ export function ChatMessage({ role, content, isStreaming, onFeedback }: ChatMess
                 "p-1.5 rounded-md hover:bg-secondary transition-colors",
                 feedback === 'up' 
                   ? "text-primary" 
-                  : "text-muted-foreground hover:text-foreground"
+                  : "text-muted-foreground hover:text-foreground",
+                isFeedbackDisabled && "cursor-not-allowed opacity-60"
               )}
               title="Buena respuesta"
             >
@@ -150,7 +152,8 @@ export function ChatMessage({ role, content, isStreaming, onFeedback }: ChatMess
                 "p-1.5 rounded-md hover:bg-secondary transition-colors",
                 feedback === 'down' 
                   ? "text-destructive" 
-                  : "text-muted-foreground hover:text-foreground"
+                  : "text-muted-foreground hover:text-foreground",
+                isFeedbackDisabled && "cursor-not-allowed opacity-60"
               )}
               title="Mala respuesta"
             >

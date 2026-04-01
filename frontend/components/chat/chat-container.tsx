@@ -1,12 +1,13 @@
 "use client"
 
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useChat } from '@/hooks/use-chat'
 import { ChatMessage } from './chat-message'
 import { ChatInput } from './chat-input'
 import { WelcomeScreen } from './welcome-screen'
 import { ChatHeader } from './chat-header'
 import type { AgentSummary, AgentsResponse } from '@/types/agent'
+import type { SuggestionsResponse } from '@/types/suggestion'
 import { apiUrl } from '@/lib/api'
 
 const FEEDBACK_RATING: Record<'up' | 'down', number> = {
@@ -21,6 +22,7 @@ export function ChatContainer() {
   const [agentError, setAgentError] = useState<string | null>(null)
   const [feedbackError, setFeedbackError] = useState<string | null>(null)
   const agentInitializedRef = useRef(false)
+  const conversationIdRef = useRef<string | null>(null)
 
   const { messages, isLoading, sendMessage, stopGeneration, clearMessages, conversationId } = useChat({
     onError: (error) => {
@@ -64,12 +66,91 @@ export function ChatContainer() {
   }, [])
 
   useEffect(() => {
+    conversationIdRef.current = conversationId
+  }, [conversationId])
+
+  useEffect(() => {
+    const controller = new AbortController()
+
+    const loadSuggestions = async () => {
+      try {
+        const response = await fetch(apiUrl('/suggestions'), {
+          signal: controller.signal,
+        })
+        if (!response.ok) {
+          throw new Error(`No se pudieron cargar las sugerencias (${response.status})`)
+        }
+        const data: SuggestionsResponse = await response.json()
+        if (Array.isArray(data.suggestions)) {
+          const sanitizedSuggestions = data.suggestions.filter((item) => typeof item === 'string')
+          setSuggestions(sanitizedSuggestions)
+        }
+      } catch (error) {
+        if (error instanceof DOMException && error.name === 'AbortError') return
+        console.warn('Error al cargar sugerencias:', error)
+      }
+    }
+
+    loadSuggestions()
+
+    return () => {
+      controller.abort()
+    }
+  }, [])
+
+  const handleClearChat = useCallback(async () => {
+    const currentConversationId = conversationIdRef.current
+    clearMessages()
+    if (currentConversationId) {
+      try {
+        const response = await fetch(apiUrl(`/conversations/${encodeURIComponent(currentConversationId)}`), {
+          method: 'DELETE',
+        })
+        if (!response.ok) {
+          throw new Error(`No se pudo borrar la conversación (${response.status})`)
+        }
+      } catch (error) {
+        console.warn('Error al borrar la conversación:', error)
+      }
+    }
+  }, [clearMessages])
+
+  const handleFeedback = useCallback(
+    async (messageIndex: number, rating: 'up' | 'down') => {
+      if (!conversationId) {
+        console.warn('No hay una conversación activa para registrar la valoración.')
+        return
+      }
+      try {
+        const response = await fetch(apiUrl('/feedback'), {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            conversation_id: conversationId,
+            message_index: messageIndex,
+            rating: rating === 'up' ? RATING_POSITIVE : RATING_NEGATIVE,
+          }),
+        })
+
+        if (!response.ok) {
+          throw new Error(`No se pudo enviar la valoración (${response.status})`)
+        }
+      } catch (error) {
+        console.warn('Error al enviar valoración:', error)
+      }
+    },
+    [conversationId]
+  )
+
+  useEffect(() => {
     if (!selectedAgentId) return
     if (agentInitializedRef.current) {
-      clearMessages()
+      handleClearChat()
     }
     agentInitializedRef.current = true
-  }, [selectedAgentId, clearMessages])
+  }, [selectedAgentId, handleClearChat])
 
   // Auto-scroll to bottom
   useEffect(() => {
@@ -110,7 +191,7 @@ export function ChatContainer() {
   return (
     <div className="flex flex-col h-full">
       <ChatHeader
-        onClearChat={clearMessages}
+        onClearChat={handleClearChat}
         agents={agents}
         selectedAgentId={selectedAgentId}
         onAgentChange={setSelectedAgentId}
@@ -135,6 +216,7 @@ export function ChatContainer() {
             agentName={selectedAgent?.name}
             agentDescription={selectedAgent?.description}
             demoMode={demoMode}
+            suggestions={suggestions}
           />
         ) : (
           <div className="max-w-4xl mx-auto">
