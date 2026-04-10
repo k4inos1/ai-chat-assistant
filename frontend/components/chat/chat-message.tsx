@@ -9,10 +9,19 @@ interface ChatMessageProps {
   role: 'user' | 'assistant'
   content: string
   isStreaming?: boolean
+  assistantName?: string
+  feedbackDisabled?: boolean
   onFeedback?: (rating: 'up' | 'down') => Promise<void> | void
 }
 
-export function ChatMessage({ role, content, isStreaming, onFeedback }: ChatMessageProps) {
+export function ChatMessage({
+  role,
+  content,
+  isStreaming,
+  assistantName = 'Asistente',
+  feedbackDisabled = false,
+  onFeedback,
+}: ChatMessageProps) {
   const [copied, setCopied] = useState(false)
   const [feedback, setFeedback] = useState<'up' | 'down' | null>(null)
   const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false)
@@ -27,7 +36,7 @@ export function ChatMessage({ role, content, isStreaming, onFeedback }: ChatMess
   }
 
   const handleFeedback = async (rating: 'up' | 'down') => {
-    if (isSubmittingFeedback) return
+    if (isSubmittingFeedback || isFeedbackDisabled) return
 
     const nextFeedback = feedback === rating ? null : rating
     setFeedback(nextFeedback)
@@ -133,7 +142,7 @@ export function ChatMessage({ role, content, isStreaming, onFeedback }: ChatMess
             </button>
             <button
               onClick={() => handleFeedback('up')}
-              disabled={isSubmittingFeedback}
+              disabled={isSubmittingFeedback || isFeedbackDisabled}
               className={cn(
                 "p-1.5 rounded-md hover:bg-secondary transition-colors",
                 feedback === 'up' 
@@ -147,7 +156,7 @@ export function ChatMessage({ role, content, isStreaming, onFeedback }: ChatMess
             </button>
             <button
               onClick={() => handleFeedback('down')}
-              disabled={isSubmittingFeedback}
+              disabled={isSubmittingFeedback || isFeedbackDisabled}
               className={cn(
                 "p-1.5 rounded-md hover:bg-secondary transition-colors",
                 feedback === 'down' 
