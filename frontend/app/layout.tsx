@@ -1,17 +1,6 @@
 import type { Metadata, Viewport } from 'next'
-import { Inter, JetBrains_Mono } from 'next/font/google'
 import { ThemeProvider } from '@/components/theme-provider'
 import './globals.css'
-
-const inter = Inter({ 
-  subsets: ['latin'],
-  variable: '--font-inter'
-})
-
-const jetbrainsMono = JetBrains_Mono({ 
-  subsets: ['latin'],
-  variable: '--font-jetbrains'
-})
 
 export const metadata: Metadata = {
   title: 'NexusAI - Asistente de Chat Inteligente',
@@ -35,7 +24,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="es" suppressHydrationWarning>
-      <body className={`${inter.variable} ${jetbrainsMono.variable} font-sans antialiased`}>
+      <body className="font-sans antialiased">
         <ThemeProvider
           attribute="class"
           defaultTheme="dark"

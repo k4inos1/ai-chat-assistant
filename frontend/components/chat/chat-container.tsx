@@ -21,6 +21,7 @@ export function ChatContainer() {
   const [demoMode, setDemoMode] = useState(false)
   const [agentError, setAgentError] = useState<string | null>(null)
   const [feedbackError, setFeedbackError] = useState<string | null>(null)
+  const [suggestions, setSuggestions] = useState<string[]>([])
   const agentInitializedRef = useRef(false)
   const conversationIdRef = useRef<string | null>(null)
 
@@ -117,31 +118,33 @@ export function ChatContainer() {
 
   const handleFeedback = useCallback(
     async (messageIndex: number, rating: 'up' | 'down') => {
-      if (!conversationId) {
-        console.warn('No hay una conversación activa para registrar la valoración.')
-        return
+      const currentConversationId = conversationIdRef.current
+      if (!currentConversationId) {
+        const errorMessage = 'Envía un mensaje y espera a que exista una conversación activa antes de enviar feedback.'
+        setFeedbackError(errorMessage)
+        throw new Error(errorMessage)
       }
-      try {
-        const response = await fetch(apiUrl('/feedback'), {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            conversation_id: conversationId,
-            message_index: messageIndex,
-            rating: rating === 'up' ? RATING_POSITIVE : RATING_NEGATIVE,
-          }),
-        })
 
-        if (!response.ok) {
-          throw new Error(`No se pudo enviar la valoración (${response.status})`)
-        }
-      } catch (error) {
-        console.warn('Error al enviar valoración:', error)
+      setFeedbackError(null)
+      const response = await fetch(apiUrl('/feedback'), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          conversation_id: currentConversationId,
+          message_index: messageIndex,
+          rating: FEEDBACK_RATING[rating],
+        }),
+      })
+
+      if (!response.ok) {
+        const errorMessage = 'No se pudo enviar tu valoración. Intenta nuevamente.'
+        setFeedbackError(errorMessage)
+        throw new Error(errorMessage)
       }
     },
-    [conversationId]
+    []
   )
 
   useEffect(() => {
@@ -157,36 +160,12 @@ export function ChatContainer() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
-  const handleSuggestionClick = (suggestion: string) => {
-    sendMessage(suggestion)
-  }
-
-  const handleFeedback = async (messageIndex: number, rating: 'up' | 'down') => {
-    if (!conversationId) {
-      const errorMessage = 'Envía un mensaje y espera a que exista una conversación activa antes de enviar feedback.'
-      setFeedbackError(errorMessage)
-      throw new Error(errorMessage)
-    }
-
-    setFeedbackError(null)
-    const response = await fetch(apiUrl('/feedback'), {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        conversation_id: conversationId,
-        message_index: messageIndex,
-        rating: FEEDBACK_RATING[rating],
-      }),
-    })
-
-    if (!response.ok) {
-      const errorMessage = 'No se pudo enviar tu valoración. Intenta nuevamente.'
-      setFeedbackError(errorMessage)
-      throw new Error(errorMessage)
-    }
-  }
+  const handleSuggestionClick = useCallback(
+    (suggestion: string) => {
+      sendMessage(suggestion)
+    },
+    [sendMessage]
+  )
 
   return (
     <div className="flex flex-col h-full">
@@ -226,6 +205,8 @@ export function ChatContainer() {
                 role={message.role}
                 content={message.content}
                 isStreaming={isLoading && index === messages.length - 1 && message.role === 'assistant'}
+                assistantName={selectedAgent?.name}
+                feedbackDisabled={!conversationId}
                 onFeedback={
                   message.role === 'assistant'
                     ? (rating) => handleFeedback(index, rating)
